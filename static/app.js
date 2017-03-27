@@ -232,8 +232,34 @@ function initMap() {
     const infoWindow = new google.maps.InfoWindow();
     
     // Load data from the backend
-    map.data.loadGeoJson('/data/subway-stations');
     map.data.loadGeoJson('/data/subway-lines');
+    
+    
+    // We want to dynamically show stations based on viewport.
+    // Cache the currently visible stations in an array.
+    let stationsData = [];
+    // Populate the map & this array when the map is idle i.e. after a pan or zoom.
+    // Load stations GeoJSON based on map viewport.
+    google.maps.event.addListener(map, 'idle', () => {
+    	let sw = map.getBounds().getSouthWest();
+    	let ne = map.getBounds().getNorthEast();
+    	
+    	let viewport = `${sw.lat()},${sw.lng()}|${ne.lat()},${ne.lng()}`;
+    	map.data.loadGeoJson(`/data/subway-stations?viewport=${viewport}`,
+    	null, 
+    	(stations) => {
+    		stationsData.forEach( station => {
+    			map.data.remove(station);
+    		});
+    		stationsData = stations;
+    		return stations;
+    	});
+    });
+    // Uncomment to show all station data at once.
+    // map.data.loadGeoJson('/data/subway-stations');
+    
+
+    
     
     // Style the geo data features (stations & lines)
     map.data.setStyle( feature => {
@@ -268,28 +294,28 @@ function initMap() {
     });
     
     // Display station & line info when station is clicked.
-  map.data.addListener('click', ev => {
-    let f = ev.feature;
-    let stationName = f.getProperty('name');
-    let line = f.getProperty('line');
-    // Stations have line property, while lines do not.
-    if (typeof line === "undefined") {
-      return;
-    }
-    if (line.includes('-')) {
-      line += ' lines';
-    } else {
-      line += ' line';
-    }
-    infoWindow.setContent(`<b>${stationName} Station</b><br/>Serves ${line}`);
-    // Hat tip geocodezip: http://stackoverflow.com/questions/23814197
-    infoWindow.setPosition(f.getGeometry().get());
-    infoWindow.setOptions({
-      pixelOffset: new google.maps.Size(0, 0)
+    map.data.addListener('click', ev => {
+    	let f = ev.feature;
+    	let stationName = f.getProperty('name');
+    	let line = f.getProperty('line');
+    	// Stations have line property, while lines do not.
+    	if (typeof line === "undefined") {
+    		return;
+    	}
+    	if (line.includes('-')) {
+    		line += ' lines';
+    	} else {
+    		line += ' line';
+    	}
+    	
+    	infoWindow.setContent(`<b>${stationName} Station</b><br/>Serves ${line}`);
+    	// Hat tip geocodezip: http://stackoverflow.com/questions/23814197
+    	infoWindow.setPosition(f.getGeometry().get());
+    	infoWindow.setOptions({
+    		pixelOffset: new google.maps.Size(0, 0)
+    	});
+    	infoWindow.open(map);
     });
-    infoWindow.open(map);
-  });
-
 }
 
 function _getType(feature) {

@@ -1,4 +1,4 @@
-package hello
+package nycsubway
 
 import (
 	"io/ioutil"
@@ -33,18 +33,13 @@ func cacheGeoJson() {
 func init() {
 	// Cachec GeoJSON
 	cacheGeoJson()
+	loadStationsData()
 
 	// Set up stations handler
 	http.HandleFunc("/data/subway-stations", stationsHandler)
 
 	// Set up lines handler
 	http.HandleFunc("/data/subway-lines", linesHandler)
-}
-
-func stationsHandler(w http.ResponseWriter, r *http.Request) {
-	// Send stations data
-	w.Header().Set("Content-type", "application/json")
-	w.Write(GeoJSON["subway-stations.geojson"])
 }
 
 func linesHandler(w http.ResponseWriter, r *http.Request) {
